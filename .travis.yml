@@ -1,0 +1,25 @@
+language: node_js
+node_js:
+  - "node"
+
+cache:
+  directories:
+    - "node_modules"
+
+install:
+  - npm install
+
+deploy:
+  provider: lambda
+  function_name: "react-ecommerce-backend-stripe"
+  region: "us-east-1"
+  role:
+    secure: "$AWS_ROLE_ARN"
+  runtime: "nodejs12.x"
+  module_name: "lambda"
+  handler_name: "handler"
+  on:
+    branch: master
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key:
+    secure: "$AWS_SECRET_KEY"

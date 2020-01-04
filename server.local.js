@@ -4,4 +4,5 @@ const port = process.env.PORT || 5000;
 app.listen(port, error => {
   if (error) throw error;
   console.log("Server running on port " + port);
+  console.log("NODE_ENV: " + process.env.NODE_ENV);
 });

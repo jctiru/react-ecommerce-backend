@@ -1,20 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const awsServerlessExpressMiddleware = require("aws-serverless-express/middleware");
-if (process.env.NODE_ENV !== "production") require("dotenv").config();
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+let stripe;
+if (process.env.NODE_ENV === "development") {
+  require("dotenv").config();
+  stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+}
 
 const app = express();
 app.use(cors());
 app.options("*", cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(awsServerlessExpressMiddleware.eventContext());
 
-app.post("/payment", (req, res) => {
-  if (req.hasOwnProperty("apiGateway")) {
-    req = req.apiGateway.event;
+app.post("/payment", async (req, res) => {
+  if (typeof stripe === "undefined") {
+    const getSecretParam = require("./ssm");
+    stripe = require("stripe")(await getSecretParam("STRIPE_SECRET_KEY"));
   }
 
   const body = {

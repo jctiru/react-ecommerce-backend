@@ -2,10 +2,24 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 let stripe;
-if (process.env.NODE_ENV === "development") {
-  require("dotenv").config();
-  stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-}
+let stripeSecretKey;
+
+const setupStripe = async () => {
+  if (stripeSecretKey) {
+    return;
+  } else {
+    if (process.env.NODE_ENV === "development") {
+      require("dotenv").config();
+      stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    } else {
+      const getSecretParam = require("./ssm");
+      stripeSecretKey = await getSecretParam("STRIPE_SECRET_KEY");
+    }
+    stripe = require("stripe")(stripeSecretKey);
+  }
+};
+
+setupStripe();
 
 const app = express();
 app.use(cors());
@@ -14,9 +28,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post("/payment", async (req, res) => {
-  if (typeof stripe === "undefined") {
-    const getSecretParam = require("./ssm");
-    stripe = require("stripe")(await getSecretParam("STRIPE_SECRET_KEY"));
+  if (!stripeSecretKey) {
+    await setupStripe();
   }
 
   const body = {
